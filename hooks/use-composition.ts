@@ -86,11 +86,14 @@ const COMP_NAME_TO_KEY: Record<string, string> = {
   '点构图': 'point',
   '重复元素构图': 'repeat',
   '动态构图': 'dynamic',
+  '对角线构图': 'dynamic',
   '中央构图': 'center',
+  '中心构图': 'center',
   '留白': 'whitespace',
   '留白构图': 'whitespace',
   '几何形状构图': 'geometry',
   '黄金分割': 'thirds',
+  '黄金分割构图': 'thirds',
 }
 
 // 画幅字符串 → 比例数值
