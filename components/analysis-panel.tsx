@@ -1,7 +1,7 @@
 "use client"
 
 import { ScoreDisplay } from "./score-display"
-import { COMP_LABEL, KOUJUE, TIPS, SCENE_LABELS, SCENE_CLASS, pick } from "@/lib/text-library"
+import { COMP_LABEL, SCENE_LABELS, SCENE_CLASS } from "@/lib/text-library"
 import type { SceneInfo, Compositions, CompositionResult } from "@/lib/composition-engine"
 
 interface AnalysisPanelProps {
@@ -122,7 +122,7 @@ export function AnalysisPanel({ score, analysis, sceneInfo, compositions }: Anal
                 <p className="text-sm text-white/60 mt-2">{analysis.recommendation.reason}</p>
               </div>
               <div>
-                <span className="text-white/80 font-medium text-xs uppercase tracking-widest">裁剪建议</span>
+                <span className="text-white/80 font-medium text-xs uppercase tracking-widest">裁剪方案</span>
                 <p className="text-sm text-white/60 mt-2">{analysis.recommendation.suggestion}</p>
               </div>
             </div>

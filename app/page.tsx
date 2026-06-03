@@ -43,24 +43,36 @@ export default function CompositionAnalyzer() {
   }, [loadAndAnalyze])
 
   const handleSave = useCallback(() => {
-    // 保存当前显示的图片
-    const canvas = document.createElement('canvas')
-    const img = new window.Image()
-    const src = state.editorMode === 'edit' ? state.customPreviewSrc : state.aiPreviewSrc
+    // 根据当前裁剪框截取原图对应像素区域，不包含任何背景色
+    const cropBox = state.editorMode === 'edit' ? state.userCropBox : state.aiCropBox
+    const src = state.originalSrc
     if (!src) return
+
+    const img = new window.Image()
     img.crossOrigin = "anonymous"
     img.onload = () => {
-      canvas.width = img.naturalWidth
-      canvas.height = img.naturalHeight
+      const natW = img.naturalWidth
+      const natH = img.naturalHeight
+
+      // 裁剪框像素坐标（永远不超出原图边界）
+      const sx = Math.max(0, Math.round(cropBox.x * natW))
+      const sy = Math.max(0, Math.round(cropBox.y * natH))
+      const sw = Math.min(natW - sx, Math.max(1, Math.round(cropBox.w * natW)))
+      const sh = Math.min(natH - sy, Math.max(1, Math.round(cropBox.h * natH)))
+
+      const canvas = document.createElement('canvas')
+      canvas.width = sw
+      canvas.height = sh
       const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0)
+      // 仅截取裁剪框内的像素区域，不包含任何背景色/空白
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
       const link = document.createElement('a')
       link.download = 'composition_result.png'
       link.href = canvas.toDataURL('image/png')
       link.click()
     }
     img.src = src
-  }, [state.editorMode, state.aiPreviewSrc, state.customPreviewSrc])
+  }, [state.editorMode, state.originalSrc, state.aiCropBox, state.userCropBox])
 
   // ---- 构建分析数据供 AnalysisPanel 使用 ----
   const buildAnalysisData = useCallback(() => {
@@ -75,17 +87,16 @@ export default function CompositionAnalyzer() {
       const recommendation = {
         title: api.构图类型,
         description: KOUJUE[state.primaryComp] || '',
-        reason: `置信度分析：倾斜 ${api.画面倾斜角度}°，推荐旋转 ${api.推荐旋转角度}°，推荐画幅 ${api.推荐画幅}`,
-        suggestion: api.优化建议 || (quality === 'great'
-          ? '构图运用优秀，保持当前方案即可'
-          : quality === 'good'
-            ? '微调主体位置可进一步提升'
-            : '建议按推荐方向调整构图'),
+        // 理由：显示后端返回的「理由」字段（原样）
+        reason: api.理由 || '',
+        // 裁剪方案：显示后端返回的「裁剪方案」字段（原样）
+        suggestion: api.裁剪方案 || '',
       }
 
-      const tips = api.优化建议
-        ? api.优化建议.split(/[。，；\n]/).filter(Boolean).map(s => s.trim())
-        : TIPS[state.primaryComp] || TIPS['thirds']
+      // AI优化建议：显示后端返回的「AI优化建议」字段，按分号拆分为分点
+      const tips = api.AI优化建议
+        ? api.AI优化建议.split(/[；;]/).filter(Boolean).map(s => s.trim())
+        : []
 
       return { summary, recommendation, alternative: undefined as { title: string; reason: string } | undefined, tips }
     }
@@ -93,7 +104,7 @@ export default function CompositionAnalyzer() {
     // ---- 无 API 数据时使用原有逻辑 ----
     if (!state.analysis) {
       return {
-        summary: "请上传图片以开始分析",
+        summary: "",
         recommendation: { title: "", description: "", reason: "", suggestion: "" },
         alternative: undefined as { title: string; reason: string } | undefined,
         tips: [] as string[],
@@ -198,9 +209,9 @@ export default function CompositionAnalyzer() {
         )}
 
         <main className="flex-1 flex flex-col p-4 lg:p-6">
-          <div className="max-w-[1800px] w-full mx-auto flex flex-col gap-6">
-            {/* 三个图片框 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+          <div className="w-[90%] mx-auto flex flex-col gap-6">
+            {/* 三个图片框 — flex 布局，水平居中对齐，24px 固定间距 */}
+            <div className="flex items-stretch" style={{ gap: '24px' }}>
               {/* 原图 */}
               <ImageFrame
                 title="原图"
@@ -214,7 +225,6 @@ export default function CompositionAnalyzer() {
                 title="AI 推荐构图"
                 imageSrc={state.aiPreviewSrc || imageSrc}
                 aspectRatio={state.aspectRatio || 4/3}
-                highlight
                 showGuides={state.showGuides}
                 cropBox={hasImage ? state.aiCropBox : undefined}
                 subjectPoint={hasImage ? state.aiSubjectPoint : undefined}
@@ -313,15 +323,14 @@ export default function CompositionAnalyzer() {
             {state.apiData && (
               <div className="flex items-center justify-center gap-6 text-xs text-white/60 bg-white/5 rounded-lg py-2 px-4 border border-white/10">
                 <span>🎯 主体类型：<b className="text-white/80">{state.apiData.主体类型}</b></span>
-                <span>📐 倾斜角度：<b className="text-white/80">{state.apiData.画面倾斜角度}°</b></span>
                 <span>🖼️ 推荐画幅：<b className="text-white/80">{state.apiData.推荐画幅}</b></span>
-                <span>🔄 旋转矫正：<b className="text-white/80">{state.apiData.推荐旋转角度}°</b></span>
+                <span>✂️ 裁剪：<b className="text-white/80">左{state.apiData.左裁百分比}% 右{state.apiData.右裁百分比}% 上{state.apiData.上裁百分比}% 下{state.apiData.下裁百分比}%</b></span>
               </div>
             )}
 
             {/* 分析面板 */}
             <AnalysisPanel
-              score={hasImage ? state.score : 89}
+              score={hasImage ? state.score : 0}
               analysis={analysisData}
               sceneInfo={hasImage ? state.sceneInfo : undefined}
               compositions={hasImage ? state.compositions : undefined}

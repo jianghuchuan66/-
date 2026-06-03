@@ -12,6 +12,8 @@ const nextConfig = {
       },
     ],
   },
+  // 允许 WSL 网络地址访问开发服务器资源
+  allowedDevOrigins: ['198.18.0.1', 'localhost'],
 }
 
 export default nextConfig

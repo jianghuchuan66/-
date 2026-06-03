@@ -18,13 +18,16 @@ export interface ApiAnalysisData {
   "构图类型": string
   "原图宽度": number
   "原图高度": number
-  "画面倾斜角度": number
-  "推荐旋转角度": number
-  "最优裁剪框": number[]
+  "左裁百分比": number
+  "右裁百分比": number
+  "上裁百分比": number
+  "下裁百分比": number
   "推荐画幅": string
   "构图评分": number
   "构图报告": string
-  "优化建议": string
+  "裁剪方案": string
+  "理由": string
+  "AI优化建议": string
 }
 
 export interface CompositionState {
@@ -58,7 +61,7 @@ export interface CompositionState {
   // 辅助线
   showGuides: boolean
 
-  // ---- 新增：AI API 相关状态 ----
+  // ---- AI API 相关状态 ----
   /** 是否正在调用 AI 分析 */
   isAnalyzing: boolean
   /** AI 分析错误信息 */
@@ -125,7 +128,6 @@ export function useComposition() {
     userSubjectPoint: DEFAULT_POINT,
     userRotation: 0,
     showGuides: true,
-    // 新增状态初始值
     isAnalyzing: false,
     analysisError: null,
     apiData: null,
@@ -142,6 +144,44 @@ export function useComposition() {
     offscreenRef.current.height = h
     return offscreenRef.current
   }, [])
+
+  /**
+   * 将后端四边裁剪百分比转换为像素坐标 CropBox
+   *
+   * 计算公式：
+   *   x1 = 原图宽度 × 左百分比 ÷ 100
+   *   y1 = 原图高度 × 上百分比 ÷ 100
+   *   x2 = 原图宽度 × (1 - 右百分比 ÷ 100)
+   *   y2 = 原图高度 × (1 - 下百分比 ÷ 100)
+   *
+   * 边界校验：x1≥0、y1≥0、x2≤原图宽度、y2≤原图高度
+   */
+  function percentagesToCropBox(
+    leftPct: number, rightPct: number, topPct: number, bottomPct: number,
+    natW: number, natH: number
+  ): CropBox {
+    // 像素坐标计算
+    const x1 = (natW * leftPct) / 100
+    const y1 = (natH * topPct) / 100
+    const x2 = natW * (1 - rightPct / 100)
+    const y2 = natH * (1 - bottomPct / 100)
+
+    // 边界校验
+    const cx = Math.max(0, x1)
+    const cy = Math.max(0, y1)
+    const cx2 = Math.min(natW, x2)
+    const cy2 = Math.min(natH, y2)
+
+    const cw = Math.max(1, cx2 - cx)
+    const ch = Math.max(1, cy2 - cy)
+
+    return {
+      x: cx / natW,
+      y: cy / natH,
+      w: cw / natW,
+      h: ch / natH,
+    }
+  }
 
   /** 核心：加载图片 → AI 分析 → 生成推荐 */
   const loadAndAnalyze = useCallback((file: File): Promise<void> => {
@@ -171,7 +211,6 @@ export function useComposition() {
 
           // ---- 阶段2: 提取 base64 并调用 AI 分析 API ----
           try {
-            // 从 dataUrl 中提取纯净的 base64 字符串
             const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '')
 
             const apiResponse = await fetch('/api/analyze', {
@@ -192,37 +231,18 @@ export function useComposition() {
 
             const apiData: ApiAnalysisData = apiResult.data
 
-            // ---- 阶段3: 将 API 数据映射到状态（严格边界校验） ----
-            // 使用 API 返回的原图尺寸作为权威边界（优先于 natW/natH）
-            const boundaryW = apiData.原图宽度 > 0 ? apiData.原图宽度 : natW
-            const boundaryH = apiData.原图高度 > 0 ? apiData.原图高度 : natH
+            // ---- 阶段3: 百分比 → 裁剪框坐标 ----
+            const leftPct = clamp(apiData.左裁百分比, 0, 50)
+            const rightPct = clamp(apiData.右裁百分比, 0, 50)
+            const topPct = clamp(apiData.上裁百分比, 0, 50)
+            const bottomPct = clamp(apiData.下裁百分比, 0, 50)
 
-            const rawBox = apiData.最优裁剪框 // [x, y, w, h] 原生像素坐标
-            let cropBox: CropBox = DEFAULT_CROP
+            const cropBox = percentagesToCropBox(
+              leftPct, rightPct, topPct, bottomPct,
+              natW, natH
+            )
 
-            if (boundaryW > 0 && boundaryH > 0 && rawBox.length === 4) {
-              // 严格边界校验：x≥0, y≥0, x+w≤原图宽, y+h≤原图高
-              let cx = Math.max(0, Math.round(rawBox[0]))
-              let cy = Math.max(0, Math.round(rawBox[1]))
-              let cw = Math.max(1, Math.round(rawBox[2]))
-              let ch = Math.max(1, Math.round(rawBox[3]))
-
-              // 超出边界自动向内修正，杜绝裁切框越界
-              if (cx + cw > boundaryW) cw = boundaryW - cx
-              if (cy + ch > boundaryH) ch = boundaryH - cy
-              // 二次保险：宽度/高度不能超过原图尺寸
-              if (cw > boundaryW) { cx = 0; cw = boundaryW }
-              if (ch > boundaryH) { cy = 0; ch = boundaryH }
-
-              cropBox = {
-                x: cx / boundaryW,
-                y: cy / boundaryH,
-                w: cw / boundaryW,
-                h: ch / boundaryH,
-              }
-            }
-
-            // 主体点位锁定在裁剪框内部
+            // 主体点位锁定在裁剪框内部（中心偏上）
             const subjectPt: SubjectPoint = {
               x: cropBox.x + cropBox.w * 0.5,
               y: cropBox.y + cropBox.h * 0.4,
@@ -230,7 +250,6 @@ export function useComposition() {
 
             const primaryComp = COMP_NAME_TO_KEY[apiData.构图类型] || 'thirds'
             const newAspectRatio = aspectRatioToNumber(apiData.推荐画幅)
-            const rotation = clamp(apiData.推荐旋转角度, -10, 10)
 
             setState(prev => ({
               ...prev,
@@ -245,21 +264,19 @@ export function useComposition() {
               aiSubjectPoint: subjectPt,
               userCropBox: cropBox,
               userSubjectPoint: subjectPt,
-              userRotation: rotation,
+              userRotation: 0,  // 不自动旋转，留给用户手动调整
               aspectRatio: newAspectRatio,
               editorMode: 'ai',
             }))
 
             resolve()
           } catch (apiError) {
-            // API 调用失败 → 设置错误状态，但图片仍然可用
             console.error('[useComposition] AI 分析失败:', apiError)
             setState(prev => ({
               ...prev,
               isAnalyzing: false,
               analysisError: 'AI分析失败，请重试',
             }))
-            // 即使失败也 resolve，图片已加载
             resolve()
           }
         }
@@ -311,7 +328,7 @@ export function useComposition() {
     }))
   }, [])
 
-  /** 更新用户旋转 */
+  /** 更新用户旋转（仅手动调整） */
   const updateUserRotation = useCallback((deg: number) => {
     setState(prev => ({
       ...prev,
@@ -352,7 +369,6 @@ export function useComposition() {
       userSubjectPoint: DEFAULT_POINT,
       userRotation: 0,
       showGuides: true,
-      // 重置新增状态
       isAnalyzing: false,
       analysisError: null,
       apiData: null,
