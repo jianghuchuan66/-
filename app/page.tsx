@@ -210,9 +210,19 @@ export default function CompositionAnalyzer() {
 
         <main className="flex-1 flex flex-col p-4 lg:p-6">
           <div className="w-[90%] mx-auto flex flex-col gap-6">
-            {/* 三个图片框 — 宽度自适应，水平居中，上下对齐，均匀间距 */}
-            <div className="flex items-stretch justify-center" style={{ gap: '24px' }}>
-              {/* 原图 */}
+            {/* ===== 上方：AI 推荐构图（独立展示，宽度自适应） ===== */}
+            <div className="flex justify-center" style={{ height: 'min(45vh, 520px)' }}>
+              <ImageFrame
+                title="AI 推荐构图"
+                imageSrc={state.aiPreviewSrc || imageSrc}
+                aspectRatio={state.aspectRatio || 4/3}
+                showGuides={state.showGuides}
+                className="h-full"
+              />
+            </div>
+
+            {/* ===== 下方：原图 + 用户定制版（水平并排，与上方等高） ===== */}
+            <div className="flex items-stretch justify-center" style={{ gap: '24px', height: 'min(45vh, 520px)' }}>
               <ImageFrame
                 title="原图"
                 imageSrc={imageSrc}
@@ -221,16 +231,6 @@ export default function CompositionAnalyzer() {
                 className=""
               />
 
-              {/* AI 推荐构图 — 仅显示裁剪后画面，无绿色边框 */}
-              <ImageFrame
-                title="AI 推荐构图"
-                imageSrc={state.aiPreviewSrc || imageSrc}
-                aspectRatio={state.aspectRatio || 4/3}
-                showGuides={state.showGuides}
-                className=""
-              />
-
-              {/* 用户定制版 */}
               <ImageFrame
                 title="用户定制版"
                 imageSrc={state.customPreviewSrc || imageSrc}
