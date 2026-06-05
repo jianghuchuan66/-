@@ -26,6 +26,7 @@ interface ImageFrameProps {
   onCropBoxChange?: (box: CropBox) => void
   onSubjectPointChange?: (pt: SubjectPoint) => void
   onRotationChange?: (deg: number) => void
+  className?: string
 }
 
 export function ImageFrame({
@@ -43,6 +44,7 @@ export function ImageFrame({
   onCropBoxChange,
   onSubjectPointChange,
   onRotationChange,
+  className = 'flex-1',
 }: ImageFrameProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
@@ -209,7 +211,7 @@ export function ImageFrame({
   const imgScaleY = imgH / containerSize.h
 
   return (
-    <div className="flex flex-col flex-1 min-w-0">
+    <div className={`flex flex-col min-w-0 ${className}`}>
       {/* 标题行 — 固定高度确保三栏对齐 */}
       <div className="flex items-center justify-between h-7 mb-2">
         <h3 className="text-sm font-semibold text-white/90 tracking-widest uppercase">
@@ -223,7 +225,6 @@ export function ImageFrame({
         className={`relative flex-1 min-w-0 flex items-center justify-center overflow-hidden ${
           editorMode === 'edit' && editable ? "cursor-move" : ""
         }`}
-        style={{ maxHeight: '500px' }}
         onMouseDown={handlePointerDown}
         onMouseMove={handlePointerMove}
         onMouseUp={handlePointerUp}
@@ -239,11 +240,8 @@ export function ImageFrame({
               ref={imgRef}
               src={imageSrc!}
               alt={title}
-              className="select-none"
+              className="select-none h-full w-auto"
               style={{
-                maxWidth: '100%',
-                maxHeight: '500px',
-                objectFit: 'contain',
                 rotate: userRotation ? `${userRotation}deg` : undefined,
               }}
               draggable={false}

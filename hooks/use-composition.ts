@@ -254,11 +254,24 @@ export function useComposition() {
             const primaryComp = COMP_NAME_TO_KEY[apiData.构图类型] || 'thirds'
             const newAspectRatio = aspectRatioToNumber(apiData.推荐画幅)
 
+            // ---- 根据 AI 裁剪框生成裁剪后的预览图 ----
+            const cropCanvas = document.createElement('canvas')
+            const sx = Math.round(cropBox.x * natW)
+            const sy = Math.round(cropBox.y * natH)
+            const sw = Math.round(cropBox.w * natW)
+            const sh = Math.round(cropBox.h * natH)
+            cropCanvas.width = sw
+            cropCanvas.height = sh
+            const cropCtx = cropCanvas.getContext('2d')!
+            cropCtx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
+            const aiCroppedPreview = cropCanvas.toDataURL('image/png')
+
             setState(prev => ({
               ...prev,
               isAnalyzing: false,
               analysisError: null,
               apiData,
+              aiPreviewSrc: aiCroppedPreview,
               score: apiData.构图评分,
               primaryComp,
               backupComp: primaryComp === 'thirds' ? 'center' : 'thirds',

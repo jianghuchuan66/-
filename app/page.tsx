@@ -210,25 +210,24 @@ export default function CompositionAnalyzer() {
 
         <main className="flex-1 flex flex-col p-4 lg:p-6">
           <div className="w-[90%] mx-auto flex flex-col gap-6">
-            {/* 三个图片框 — flex 布局，水平居中对齐，24px 固定间距 */}
-            <div className="flex items-stretch" style={{ gap: '24px' }}>
+            {/* 三个图片框 — 宽度自适应，水平居中，上下对齐，均匀间距 */}
+            <div className="flex items-stretch justify-center" style={{ gap: '24px' }}>
               {/* 原图 */}
               <ImageFrame
                 title="原图"
                 imageSrc={imageSrc}
                 aspectRatio={state.aspectRatio || 4/3}
                 showGuides={state.showGuides}
+                className=""
               />
 
-              {/* AI 推荐构图 */}
+              {/* AI 推荐构图 — 仅显示裁剪后画面，无绿色边框 */}
               <ImageFrame
                 title="AI 推荐构图"
                 imageSrc={state.aiPreviewSrc || imageSrc}
                 aspectRatio={state.aspectRatio || 4/3}
                 showGuides={state.showGuides}
-                cropBox={hasImage ? state.aiCropBox : undefined}
-                subjectPoint={hasImage ? state.aiSubjectPoint : undefined}
-                cropColor="rgba(34,197,94,0.55)"
+                className=""
               />
 
               {/* 用户定制版 */}
@@ -238,6 +237,7 @@ export default function CompositionAnalyzer() {
                 aspectRatio={state.aspectRatio || 4/3}
                 editable
                 showGuides={state.showGuides}
+                className=""
                 cropBox={hasImage ? (state.editorMode === 'edit' ? state.userCropBox : state.aiCropBox) : undefined}
                 subjectPoint={hasImage ? (state.editorMode === 'edit' ? state.userSubjectPoint : state.aiSubjectPoint) : undefined}
                 cropColor={state.editorMode === 'edit' ? "rgba(249,115,22,0.7)" : "rgba(34,197,94,0.55)"}
