@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useCallback, useEffect } from "react"
+import Link from "next/link"
 import { Header } from "@/components/header"
 import { ImageFrame } from "@/components/image-frame"
 import { AnalysisPanel } from "@/components/analysis-panel"
@@ -8,6 +9,7 @@ import { ParticleBackground } from "@/components/particle-background"
 import { ColorPickerPanel } from "@/components/color-picker-panel"
 import { useComposition } from "@/hooks/use-composition"
 import { useBackgroundColor } from "@/hooks/use-background-color"
+import { useCompositionContext } from "@/contexts/composition-context"
 import {
   KOUJUE, COMP_LABEL, TIPS,
   getCopy, getMinimalCopy,
@@ -15,6 +17,9 @@ import {
 import type { CompositionResult } from "@/lib/composition-engine"
 
 export default function CompositionAnalyzer() {
+  // ---- 跨页面导航保留状态（Context → useComposition 初始值） ----
+  const { saved, save } = useCompositionContext()
+
   const {
     state,
     loadAndAnalyze,
@@ -26,10 +31,24 @@ export default function CompositionAnalyzer() {
     updateUserRotation,
     confirmEdit,
     reset,
-  } = useComposition()
+  } = useComposition(saved ?? undefined)
+
+  // 重置时同步清除 Context 存档
+  const { clear: clearSaved } = useCompositionContext()
+  const handleReset = useCallback(() => {
+    clearSaved()
+    reset()
+  }, [clearSaved, reset])
 
   // ---- 取色换背景 ----
   const bgColor = useBackgroundColor()
+
+  // 照片/分析就绪后存入 Context
+  useEffect(() => {
+    if (state.originalSrc) {
+      save(state)
+    }
+  }, [state.originalSrc, state.aiPreviewSrc, state.apiData, save])
 
   // 读取当前图片取色
   const handleExtractFromCurrent = useCallback(() => {
@@ -43,7 +62,6 @@ export default function CompositionAnalyzer() {
   useEffect(() => {
     const prev = prevSrcRef.current
     prevSrcRef.current = state.originalSrc
-    // 每次上传新图片（originalSrc 变化且非空）自动取色换背景
     if (state.originalSrc && state.originalSrc !== prev) {
       bgColor.extractAndApply(state.originalSrc)
     }
@@ -212,7 +230,7 @@ export default function CompositionAnalyzer() {
           onUpload={handleUpload}
           onApplyAI={applyAI}
           onSave={handleSave}
-          onReset={reset}
+          onReset={handleReset}
           hasImage={hasImage}
         />
 
@@ -377,6 +395,20 @@ export default function CompositionAnalyzer() {
           </div>
         </main>
       </div>
+
+      {/* ========== 构图笔记本导航按钮 ========== */}
+      <Link
+        href="/notebook"
+        className="fixed bottom-6 left-6 z-[9999] flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#2d2d2d] border-2 border-white/25 shadow-[0_0_16px_rgba(255,255,255,0.1)] hover:border-white/45 hover:bg-[#3a3a3a] hover:shadow-[0_0_24px_rgba(255,255,255,0.18)] active:scale-95 transition-all duration-200"
+        style={{ color: '#e5e7eb' }}
+        title="构图笔记本"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+        </svg>
+        <span className="text-sm font-medium tracking-wider">构图笔记本</span>
+      </Link>
 
       {/* ========== 取色换背景面板 ========== */}
       <ColorPickerPanel

@@ -109,31 +109,38 @@ function aspectRatioToNumber(ratio: string): number {
   return map[ratio] ?? 4 / 3
 }
 
-export function useComposition() {
-  const [state, setState] = useState<CompositionState>({
-    originalSrc: null,
-    aiPreviewSrc: null,
-    customPreviewSrc: null,
-    imageNaturalW: 0,
-    imageNaturalH: 0,
-    aspectRatio: 4/3,
-    analysis: null,
-    sceneInfo: null,
-    compositions: null,
-    score: 0,
-    aiCropBox: DEFAULT_CROP,
-    aiSubjectPoint: DEFAULT_POINT,
-    primaryComp: 'thirds',
-    backupComp: 'center',
-    primaryQuality: 'good',
-    editorMode: 'ai',
-    userCropBox: DEFAULT_CROP,
-    userSubjectPoint: DEFAULT_POINT,
-    userRotation: 0,
-    showGuides: true,
-    isAnalyzing: false,
-    analysisError: null,
-    apiData: null,
+const DEFAULT_STATE: CompositionState = {
+  originalSrc: null,
+  aiPreviewSrc: null,
+  customPreviewSrc: null,
+  imageNaturalW: 0,
+  imageNaturalH: 0,
+  aspectRatio: 4/3,
+  analysis: null,
+  sceneInfo: null,
+  compositions: null,
+  score: 0,
+  aiCropBox: DEFAULT_CROP,
+  aiSubjectPoint: DEFAULT_POINT,
+  primaryComp: 'thirds',
+  backupComp: 'center',
+  primaryQuality: 'good',
+  editorMode: 'ai',
+  userCropBox: DEFAULT_CROP,
+  userSubjectPoint: DEFAULT_POINT,
+  userRotation: 0,
+  showGuides: true,
+  isAnalyzing: false,
+  analysisError: null,
+  apiData: null,
+}
+
+export function useComposition(initialState?: Partial<CompositionState>) {
+  const [state, setState] = useState<CompositionState>(() => {
+    if (initialState && initialState.originalSrc) {
+      return { ...DEFAULT_STATE, ...initialState, isAnalyzing: false, analysisError: null }
+    }
+    return DEFAULT_STATE
   })
 
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
