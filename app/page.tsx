@@ -1,11 +1,13 @@
 "use client"
 
-import { useRef, useCallback } from "react"
+import { useRef, useCallback, useEffect } from "react"
 import { Header } from "@/components/header"
 import { ImageFrame } from "@/components/image-frame"
 import { AnalysisPanel } from "@/components/analysis-panel"
 import { ParticleBackground } from "@/components/particle-background"
+import { ColorPickerPanel } from "@/components/color-picker-panel"
 import { useComposition } from "@/hooks/use-composition"
+import { useBackgroundColor } from "@/hooks/use-background-color"
 import {
   KOUJUE, COMP_LABEL, TIPS,
   getCopy, getMinimalCopy,
@@ -25,6 +27,27 @@ export default function CompositionAnalyzer() {
     confirmEdit,
     reset,
   } = useComposition()
+
+  // ---- 取色换背景 ----
+  const bgColor = useBackgroundColor()
+
+  // 读取当前图片取色
+  const handleExtractFromCurrent = useCallback(() => {
+    if (state.originalSrc) {
+      bgColor.extractFromImage(state.originalSrc)
+    }
+  }, [state.originalSrc, bgColor.extractFromImage])
+
+  // ---- 上传图片后自动提取主色并换背景 ----
+  const prevSrcRef = useRef(state.originalSrc)
+  useEffect(() => {
+    const prev = prevSrcRef.current
+    prevSrcRef.current = state.originalSrc
+    // 每次上传新图片（originalSrc 变化且非空）自动取色换背景
+    if (state.originalSrc && state.originalSrc !== prev) {
+      bgColor.extractAndApply(state.originalSrc)
+    }
+  }, [state.originalSrc, bgColor.extractAndApply])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -156,9 +179,25 @@ export default function CompositionAnalyzer() {
   const imageSrc = state.originalSrc || ""
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#080808]">
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden bg-[#080808]"
+      style={
+        bgColor.hasApplied && bgColor.displayColor
+          ? {
+              backgroundColor: `rgb(${bgColor.displayColor.r},${bgColor.displayColor.g},${bgColor.displayColor.b})`,
+              transition: 'background-color 0.6s ease',
+            }
+          : { transition: 'background-color 0.6s ease' }
+      }
+    >
       {/* 3D 粒子背景 */}
-      <ParticleBackground />
+      <ParticleBackground
+        customBgColor={
+          bgColor.hasApplied && bgColor.displayColor
+            ? { r: bgColor.displayColor.r, g: bgColor.displayColor.g, b: bgColor.displayColor.b }
+            : null
+        }
+      />
 
       <input
         ref={fileInputRef}
@@ -338,6 +377,24 @@ export default function CompositionAnalyzer() {
           </div>
         </main>
       </div>
+
+      {/* ========== 取色换背景面板 ========== */}
+      <ColorPickerPanel
+        isOpen={bgColor.isPanelOpen}
+        onToggle={() => bgColor.setIsPanelOpen(!bgColor.isPanelOpen)}
+        extractedColor={bgColor.extractedColor}
+        displayColor={bgColor.displayColor}
+        displayHex={bgColor.displayHex}
+        displayRgb={bgColor.displayRgb}
+        textColor={bgColor.textColor}
+        saturation={bgColor.saturation}
+        onSaturationChange={bgColor.setSaturation}
+        isExtracting={bgColor.isExtracting}
+        hasApplied={bgColor.hasApplied}
+        onExtractFromCurrent={handleExtractFromCurrent}
+        onApply={bgColor.applyBackground}
+        onRemove={bgColor.removeBackground}
+      />
     </div>
   )
 }

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// ---- OpenRouter API 配置 ----
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ""
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-const MODEL_NAME = "qwen/qwen3-vl-8b-instruct"
+// ---- 千问云 API 配置 (DashScope 兼容接口) ----
+const API_KEY = process.env.OPENROUTER_API_KEY || ""
+const API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+const MODEL_NAME = "qwen-vl-max"
 
 // ---- 动态生成提示词（包含图片尺寸） ----
 function buildPrompt(w: number, h: number): string {
@@ -156,19 +156,17 @@ export async function POST(request: NextRequest) {
     // ---- 2. 动态构建提示词 ----
     const promptText = buildPrompt(imgW, imgH)
 
-    // ---- 3. 调用 OpenRouter API ----
+    // ---- 3. 调用千问云 API (DashScope) ----
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 90000)
 
     let response: Response
     try {
-      response = await fetch(OPENROUTER_URL, {
+      response = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'AI Composition Analyzer',
         },
         body: JSON.stringify({
           model: MODEL_NAME,
@@ -201,7 +199,7 @@ export async function POST(request: NextRequest) {
     // ---- 4. 处理 API 错误 ----
     if (!response.ok) {
       const errorText = await response.text().catch(() => '')
-      console.error('[analyze] OpenRouter API error:', response.status, errorText.substring(0, 300))
+      console.error('[analyze] API error:', response.status, errorText.substring(0, 300))
       return NextResponse.json(
         { code: 500, msg: "AI分析失败，请重试", data: null },
         { status: 500 }

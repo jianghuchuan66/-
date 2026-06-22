@@ -212,14 +212,27 @@ export function useComposition() {
             analysisError: null,
           }))
 
-          // ---- 阶段2: 提取 base64 并调用 AI 分析 API ----
+          // ---- 阶段2: 压缩图片后提取 base64，调用 AI 分析 API ----
           try {
-            const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, '')
+            // 将图片缩放到最长边 ≤ 2048px，避免 base64 超 4MB 限制
+            const MAX_DIM = 2048
+            let sendW = natW, sendH = natH
+            if (Math.max(natW, natH) > MAX_DIM) {
+              const scale = MAX_DIM / Math.max(natW, natH)
+              sendW = Math.round(natW * scale)
+              sendH = Math.round(natH * scale)
+            }
+            const resizeCanvas = document.createElement('canvas')
+            resizeCanvas.width = sendW
+            resizeCanvas.height = sendH
+            const resizeCtx = resizeCanvas.getContext('2d')!
+            resizeCtx.drawImage(img, 0, 0, sendW, sendH)
+            const compressedBase64 = resizeCanvas.toDataURL('image/jpeg', 0.85).replace(/^data:image\/\w+;base64,/, '')
 
             const apiResponse = await fetch('/api/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ image: base64, width: natW, height: natH }),
+              body: JSON.stringify({ image: compressedBase64, width: sendW, height: sendH }),
             })
 
             if (!apiResponse.ok) {

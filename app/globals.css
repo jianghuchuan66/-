@@ -156,6 +156,14 @@ header .text-white\/60,
 header .text-white\/50,
 header .text-white\/40,
 header .text-white\/30,
+[data-vibe-panel] .text-white,
+[data-vibe-panel] .text-white\/90,
+[data-vibe-panel] .text-white\/80,
+[data-vibe-panel] .text-white\/70,
+[data-vibe-panel] .text-white\/60,
+[data-vibe-panel] .text-white\/50,
+[data-vibe-panel] .text-white\/40,
+[data-vibe-panel] .text-white\/30,
 .bg-black\/30 .text-white,
 .bg-black\/30 .text-white\/90,
 .bg-black\/30 .text-white\/80,
@@ -180,5 +188,62 @@ header .text-white\/30,
 .bg-black\/40 [class*="bg-["] .text-white,
 .bg-black\/40 [class*="bg-["] .text-white\/80,
 .bg-black\/40 [class*="bg-["] .text-white\/60 {
+  color: #fff !important;
+}
+
+/* ============================================================
+   取色换背景 — 0.6s 柔和过渡 + 文字对比度适配
+   ============================================================ */
+
+/* body 背景色过渡 */
+body {
+  transition: background-color 0.6s ease;
+}
+
+/* 自定义背景色激活时 — 文字色跟随背景明度自动切换 */
+.vibe-custom-bg .text-white,
+.vibe-custom-bg .text-white\/90,
+.vibe-custom-bg .text-white\/80,
+.vibe-custom-bg .text-white\/70,
+.vibe-custom-bg .text-white\/60,
+.vibe-custom-bg .text-white\/50,
+.vibe-custom-bg .text-white\/40,
+.vibe-custom-bg .text-white\/30 {
+  color: var(--vibe-text) !important;
+}
+
+/* 深色底容器内文字保持白色（header、面板、遮罩等始终用白色文字） */
+.vibe-custom-bg header .text-white,
+.vibe-custom-bg header .text-white\/90,
+.vibe-custom-bg header .text-white\/80,
+.vibe-custom-bg header .text-white\/70,
+.vibe-custom-bg [data-vibe-panel] .text-white,
+.vibe-custom-bg [data-vibe-panel] .text-white\/90,
+.vibe-custom-bg [data-vibe-panel] .text-white\/80,
+.vibe-custom-bg [data-vibe-panel] .text-white\/70,
+.vibe-custom-bg [data-vibe-panel] .text-white\/60,
+.vibe-custom-bg [data-vibe-panel] .text-white\/50,
+.vibe-custom-bg [data-vibe-panel] .text-white\/40,
+.vibe-custom-bg [data-vibe-panel] .text-white\/30,
+.vibe-custom-bg .bg-black\/30 .text-white,
+.vibe-custom-bg .bg-black\/30 .text-white\/90,
+.vibe-custom-bg .bg-black\/30 .text-white\/80,
+.vibe-custom-bg .bg-black\/30 .text-white\/60,
+.vibe-custom-bg .bg-black\/40 .text-white,
+.vibe-custom-bg .bg-black\/40 .text-white\/90,
+.vibe-custom-bg .bg-black\/40 .text-white\/80,
+.vibe-custom-bg .bg-black\/40 .text-white\/70,
+.vibe-custom-bg .bg-black\/40 .text-white\/60,
+.vibe-custom-bg .bg-black\/40 .text-white\/50,
+.vibe-custom-bg .bg-black\/40 .text-white\/40,
+.vibe-custom-bg .bg-black\/40 .text-white\/30,
+.vibe-custom-bg .bg-black\/60 .text-white,
+.vibe-custom-bg .bg-black\/60 .text-white\/90,
+.vibe-custom-bg .bg-black\/60 .text-white\/80,
+.vibe-custom-bg .bg-black\/60 .text-white\/60,
+.vibe-custom-bg .bg-black\/60 .text-white\/50,
+.vibe-custom-bg .bg-black\/40 [class*="bg-["] .text-white,
+.vibe-custom-bg .bg-black\/40 [class*="bg-["] .text-white\/80,
+.vibe-custom-bg .bg-black\/40 [class*="bg-["] .text-white\/60 {
   color: #fff !important;
 }

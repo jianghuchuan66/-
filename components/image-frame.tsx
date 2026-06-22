@@ -212,12 +212,14 @@ export function ImageFrame({
 
   return (
     <div className={`flex flex-col min-w-0 ${className}`}>
-      {/* 标题行 — 固定高度确保三栏对齐 */}
-      <div className="flex items-center justify-between h-7 mb-2">
-        <h3 className="text-sm font-semibold text-white/90 tracking-widest uppercase">
-          {title}
-        </h3>
-      </div>
+      {/* 标题行 — 无图片时隐藏 */}
+      {showImage && (
+        <div className="flex items-center justify-between h-7 mb-2">
+          <h3 className="text-sm font-semibold text-white/90 tracking-widest uppercase">
+            {title}
+          </h3>
+        </div>
+      )}
 
       {/* 图片容器 — 无背景、无边框、无圆角、完全透明，图片水平垂直居中 */}
       <div
@@ -249,7 +251,7 @@ export function ImageFrame({
 
             {/* 辅助线层 */}
             {showGuides && (
-              <div className="absolute inset-0 pointer-events-none opacity-40">
+              <div className="absolute inset-0 pointer-events-none opacity-60">
                 {/* 辅助线基于图片显示区域定位 */}
                 <div style={{
                   position: 'absolute',
@@ -259,22 +261,22 @@ export function ImageFrame({
                   height: `${imgScaleY * 100}%`,
                 }}>
                   {/* 三分法 */}
-                  <div className="absolute top-0 bottom-0 left-1/3 w-0.5 bg-white/50" style={{ boxShadow: "0 0 8px rgba(255,255,255,0.5)" }} />
-                  <div className="absolute top-0 bottom-0 left-2/3 w-0.5 bg-white/50" style={{ boxShadow: "0 0 8px rgba(255,255,255,0.5)" }} />
-                  <div className="absolute left-0 right-0 top-1/3 h-0.5 bg-white/50" style={{ boxShadow: "0 0 8px rgba(255,255,255,0.5)" }} />
-                  <div className="absolute left-0 right-0 top-2/3 h-0.5 bg-white/50" style={{ boxShadow: "0 0 8px rgba(255,255,255,0.5)" }} />
+                  <div className="absolute top-0 bottom-0 left-1/3 w-0.5 bg-white/75" style={{ boxShadow: "0 0 10px rgba(255,255,255,0.8)" }} />
+                  <div className="absolute top-0 bottom-0 left-2/3 w-0.5 bg-white/75" style={{ boxShadow: "0 0 10px rgba(255,255,255,0.8)" }} />
+                  <div className="absolute left-0 right-0 top-1/3 h-0.5 bg-white/75" style={{ boxShadow: "0 0 10px rgba(255,255,255,0.8)" }} />
+                  <div className="absolute left-0 right-0 top-2/3 h-0.5 bg-white/75" style={{ boxShadow: "0 0 10px rgba(255,255,255,0.8)" }} />
                   {/* 中心十字 */}
-                  <div className="absolute top-0 bottom-0 left-1/2 w-px bg-white/30 border-l border-dashed border-white/40" />
-                  <div className="absolute left-0 right-0 top-1/2 h-px bg-white/30 border-t border-dashed border-white/40" />
+                  <div className="absolute top-0 bottom-0 left-1/2 w-px bg-white/50 border-l border-dashed border-white/60" />
+                  <div className="absolute left-0 right-0 top-1/2 h-px bg-white/50 border-t border-dashed border-white/60" />
                   {/* 对角线 */}
                   <svg className="absolute inset-0 w-full h-full">
-                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="rgba(255,255,255,0.25)" strokeWidth="1" strokeDasharray="8 4" />
-                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="rgba(255,255,255,0.25)" strokeWidth="1" strokeDasharray="8 4" />
+                    <line x1="0" y1="0" x2="100%" y2="100%" stroke="rgba(255,255,255,0.5)" strokeWidth="1" strokeDasharray="8 4" />
+                    <line x1="100%" y1="0" x2="0" y2="100%" stroke="rgba(255,255,255,0.5)" strokeWidth="1" strokeDasharray="8 4" />
                   </svg>
                   {/* 交叉点 */}
                   {[[1/3,1/3],[2/3,1/3],[1/3,2/3],[2/3,2/3]].map(([lx, ly], i) => (
                     <div key={i} className="absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2" style={{ left: `${lx*100}%`, top: `${ly*100}%` }}>
-                      <div className="w-full h-full rounded-full border-2 border-white/70 bg-white/20" />
+                      <div className="w-full h-full rounded-full border-2 border-white/90 bg-white/35" />
                     </div>
                   ))}
                 </div>
